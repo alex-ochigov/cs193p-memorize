@@ -8,23 +8,31 @@
 
 import Foundation
 
-struct MemoryGame<T> {
+struct MemoryGame<T> where T: Equatable {
     var cards: Array<Card>
+    var indexOfTheOneAndOnlyFaceUpCard: Int? {
+        get { cards.indices.filter { cards[$0].isFaceUp }.only }
+        set {
+            for index in cards.indices {
+                cards[index].isFaceUp = index == newValue
+            }
+        }
+    }
     
     mutating func choose(card: Card) {
         print("card chosen: \(card)")
-        let chosenIndex = self.index(of: card)
-        self.cards[chosenIndex].isFaceUp = !self.cards[chosenIndex].isFaceUp
-    }
-    
-    func index(of card: Card) -> Int {
-        for index in 0..<self.cards.count {
-            if self.cards[index].id == card.id {
-                return index
+        if let chosenIndex = cards.firstIndex(matching: card), !cards[chosenIndex].isFaceUp, !cards[chosenIndex].isMatched {
+            if let potencialMatchIndex = indexOfTheOneAndOnlyFaceUpCard {
+                if cards[chosenIndex].content == cards[potencialMatchIndex].content {
+                    cards[chosenIndex].isMatched = true
+                    cards[potencialMatchIndex].isMatched = true
+                }
+                self.cards[chosenIndex].isFaceUp = true
+            } else {
+                indexOfTheOneAndOnlyFaceUpCard = chosenIndex
             }
+
         }
-        
-        return 0 // TODO: bogus!
     }
     
     init(numberOfPairsOfCards: Int, contentFactory: (Int) -> T) {
